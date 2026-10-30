@@ -1,26 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Users,
-  Search,
-  Plus,
-  Send,
-  Edit,
-  Trash2,
-  X,
-  Check,
-  MapPin,
-  AlertCircle,
-  ClipboardList,
-  Copy,
-  CheckCheck,
+  Users, Search, Plus, Send, Edit, Trash2, X, Check,
+  MapPin, AlertCircle, ClipboardList, Copy, CheckCheck, BarChart2,
 } from 'lucide-react';
-import { Student, ClassEntity } from '../types';
+import { Student, ClassEntity, MonthlyFee, AttendanceRecord } from '../types';
 import { formatCurrency, generateWhatsAppUrl, generateUUID, calculateAge, generateFichaUrl } from '../utils/formatters';
 import { EmptyState } from '../components/EmptyState';
 
 interface StudentsViewProps {
   students: Student[];
   classes: ClassEntity[];
+  fees: MonthlyFee[];
+  attendance: AttendanceRecord[];
   academyName: string;
   masterName: string;
   masterPhone?: string;
@@ -42,6 +33,8 @@ function getStudentModalities(s: Student): string[] {
 export const StudentsView: React.FC<StudentsViewProps> = ({
   students,
   classes,
+  fees,
+  attendance,
   academyName,
   masterName,
   masterPhone,
@@ -58,6 +51,7 @@ export const StudentsView: React.FC<StudentsViewProps> = ({
   const [isFichaModalOpen, setIsFichaModalOpen] = useState(false);
   const [fichaPhone, setFichaPhone] = useState('');
   const [fichaCopied, setFichaCopied] = useState(false);
+  const [historyStudent, setHistoryStudent] = useState<Student | null>(null);
 
   // ── Form state ────────────────────────────────────────────────────────────
   const [name, setName] = useState('');
@@ -453,6 +447,13 @@ export const StudentsView: React.FC<StudentsViewProps> = ({
                     >
                       <Edit className="w-4 h-4" />
                     </button>
+                    <button
+                      onClick={() => setHistoryStudent(student)}
+                      className="w-9 h-9 rounded-xl bg-[#050505] border border-[#272424] flex items-center justify-center text-[#9CA3AF] hover:text-white hover:border-[#FF4A0F] active:scale-95 transition-all"
+                      title="Histórico financeiro e frequência"
+                    >
+                      <BarChart2 className="w-4 h-4" />
+                    </button>
                   </div>
                 </div>
               </div>
@@ -773,6 +774,81 @@ export const StudentsView: React.FC<StudentsViewProps> = ({
           </div>
         </div>
       )}
+
+      {/* ── Modal: Histórico do Aluno ──────────────────────────────────────── */}
+      {historyStudent && (() => {
+        const studentFees = fees
+          .filter((f) => f.studentId === historyStudent.id)
+          .sort((a, b) => b.monthYear.split('/').reverse().join('').localeCompare(a.monthYear.split('/').reverse().join('')));
+        const studentAttendance = attendance.filter((a) => a.studentId === historyStudent.id);
+        const totalPresent = studentAttendance.filter((a) => a.status === 'PRESENTE').length;
+        const totalMarked = studentAttendance.length;
+        const pct = totalMarked > 0 ? Math.round((totalPresent / totalMarked) * 100) : null;
+        const lastPresence = studentAttendance
+          .filter((a) => a.status === 'PRESENTE')
+          .sort((a, b) => b.date.localeCompare(a.date))[0];
+        const daysSince = lastPresence ? Math.floor((Date.now() - new Date(lastPresence.date).getTime()) / 86400000) : null;
+
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
+            <div className="w-full max-w-sm bg-[#131212] border border-[#272424] rounded-2xl p-5 shadow-2xl max-h-[85vh] overflow-y-auto">
+              <div className="flex items-center justify-between pb-3 border-b border-[#272424] mb-4">
+                <div>
+                  <h3 className="text-sm font-bold text-white">{historyStudent.name}</h3>
+                  <p className="text-xs text-[#FF4A0F]">{historyStudent.graduation}</p>
+                </div>
+                <button onClick={() => setHistoryStudent(null)} className="min-w-[44px] min-h-[44px] flex items-center justify-center text-[#9CA3AF] hover:text-white">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Frequência */}
+              <div className="p-3 rounded-xl bg-[#050505] border border-[#272424] mb-3">
+                <p className="text-[10px] font-bold uppercase text-[#9CA3AF] mb-2">Frequência</p>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-lg font-black text-white">{pct !== null ? `${pct}%` : '—'}</p>
+                    <p className="text-[11px] text-[#9CA3AF]">{totalPresent} de {totalMarked} aulas</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs font-bold text-white">Última presença</p>
+                    <p className={`text-[11px] font-semibold ${daysSince !== null && daysSince > 15 ? 'text-[#EF4444]' : 'text-[#10B981]'}`}>
+                      {lastPresence ? `${lastPresence.date} (${daysSince}d atrás)` : 'Nenhuma'}
+                    </p>
+                  </div>
+                </div>
+                {pct !== null && (
+                  <div className="mt-2 h-2 bg-[#272424] rounded-full overflow-hidden">
+                    <div className={`h-full rounded-full transition-all ${pct >= 75 ? 'bg-[#10B981]' : pct >= 50 ? 'bg-[#F59E0B]' : 'bg-[#EF4444]'}`} style={{ width: `${pct}%` }} />
+                  </div>
+                )}
+              </div>
+
+              {/* Mensalidades */}
+              <p className="text-[10px] font-bold uppercase text-[#9CA3AF] mb-2">Mensalidades</p>
+              {studentFees.length === 0 ? (
+                <p className="text-xs text-[#6B7280] text-center py-3">Nenhuma mensalidade gerada</p>
+              ) : (
+                <div className="space-y-1.5">
+                  {studentFees.map((f) => (
+                    <div key={f.id} className="flex items-center justify-between px-3 py-2 rounded-lg bg-[#050505] border border-[#272424] text-xs">
+                      <span className="text-white font-semibold">{f.monthYear}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-white font-bold">{formatCurrency(f.amount)}</span>
+                        <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${
+                          f.status === 'PAGO' ? 'bg-[#10B981]/15 text-[#10B981]' :
+                          f.status === 'ATRASADO' ? 'bg-[#EF4444]/15 text-[#EF4444]' :
+                          'bg-[#F59E0B]/15 text-[#F59E0B]'
+                        }`}>{f.status}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* ── Modal: Enviar Ficha de Cadastro ───────────────────────────────── */}
       {isFichaModalOpen && masterPhone && (

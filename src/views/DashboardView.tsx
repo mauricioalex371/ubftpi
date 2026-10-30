@@ -13,7 +13,7 @@ import {
   CheckCircle2,
   Clock
 } from 'lucide-react';
-import { Student, MonthlyFee, CashTransaction, ClassEntity, AppSettings } from '../types';
+import { Student, MonthlyFee, CashTransaction, ClassEntity, AppSettings, AttendanceRecord } from '../types';
 import { formatCurrency, isBirthdayThisWeek, isPast7Days, generateWhatsAppUrl, getCurrentMonthYear } from '../utils/formatters';
 
 interface DashboardViewProps {
@@ -21,6 +21,7 @@ interface DashboardViewProps {
   fees: MonthlyFee[];
   cash: CashTransaction[];
   classes: ClassEntity[];
+  attendance: AttendanceRecord[];
   settings: AppSettings;
   onNavigateTab: (tab: any) => void;
   onOpenBackup: () => void;
@@ -28,11 +29,7 @@ interface DashboardViewProps {
 }
 
 export const DashboardView: React.FC<DashboardViewProps> = ({
-  students,
-  fees,
-  cash,
-  classes,
-  settings,
+  students, fees, cash, classes, attendance, settings,
   onNavigateTab,
   onOpenBackup,
   onQuickAddStudent,
@@ -61,7 +58,17 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
   // Unpaid / Overdue fees
   const overdueFees = fees.filter((f) => f.status === 'ATRASADO');
-  const pendingFees = fees.filter((f) => f.status === 'PENDENTE');
+
+  // Students absent for more than 15 days
+  const absentStudents = students.filter((s) => {
+    if (s.status !== 'ATIVO') return false;
+    const lastPresence = attendance
+      .filter((a) => a.studentId === s.id && a.status === 'PRESENTE')
+      .sort((a, b) => b.date.localeCompare(a.date))[0];
+    if (!lastPresence) return false;
+    const days = Math.floor((Date.now() - new Date(lastPresence.date).getTime()) / 86400000);
+    return days > 15;
+  });
 
   return (
     <div className="space-y-4 pb-20">
@@ -248,6 +255,44 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     >
                       <Send className="w-3.5 h-3.5" />
                       <span>Cobrar</span>
+                    </a>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Alunos ausentes há mais de 15 dias */}
+      {absentStudents.length > 0 && (
+        <div className="p-4 rounded-2xl bg-[#131212] border border-[#F59E0B]/40">
+          <div className="flex items-center gap-2 mb-2.5">
+            <Clock className="w-4 h-4 text-[#F59E0B]" />
+            <h3 className="text-xs font-bold uppercase tracking-wider text-white">
+              Sumidos há +15 dias ({absentStudents.length})
+            </h3>
+          </div>
+          <div className="space-y-2">
+            {absentStudents.slice(0, 3).map((s) => {
+              const last = attendance
+                .filter((a) => a.studentId === s.id && a.status === 'PRESENTE')
+                .sort((a, b) => b.date.localeCompare(a.date))[0];
+              const days = last ? Math.floor((Date.now() - new Date(last.date).getTime()) / 86400000) : null;
+              return (
+                <div key={s.id} className="flex items-center justify-between p-2.5 rounded-xl bg-[#1a1818] border border-[#272424]">
+                  <div>
+                    <p className="text-xs font-bold text-white">{s.name}</p>
+                    <p className="text-[11px] text-[#F59E0B]">{days !== null ? `${days} dias sem treinar` : 'Sem registro'}</p>
+                  </div>
+                  {s.phone && (
+                    <a
+                      href={generateWhatsAppUrl(s.phone, `Olá ${s.name}! Sentimos sua falta no treino! Quando você volta? Oss! — ${academyName}`)}
+                      target="_blank" rel="noopener noreferrer"
+                      className="min-h-[36px] px-3 rounded-lg bg-[#F59E0B]/20 border border-[#F59E0B]/40 text-[#F59E0B] font-bold text-xs flex items-center gap-1 active:scale-95"
+                    >
+                      <Send className="w-3 h-3" />
+                      <span>Chamar</span>
                     </a>
                   )}
                 </div>

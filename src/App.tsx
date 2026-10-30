@@ -487,6 +487,7 @@ export const App: React.FC = () => {
             fees={fees}
             cash={cash}
             classes={classes}
+            attendance={attendance}
             settings={settings}
             onNavigateTab={(tab) => setCurrentTab(tab)}
             onOpenBackup={() => setIsBackupOpen(true)}
@@ -498,6 +499,8 @@ export const App: React.FC = () => {
           <StudentsView
             students={students}
             classes={classes}
+            fees={fees}
+            attendance={attendance}
             academyName={settings.academyName}
             masterName={settings.masterName}
             masterPhone={settings.masterPhone}

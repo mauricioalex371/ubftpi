@@ -1,16 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import {
-  CreditCard,
-  Send,
-  Check,
-  Search,
-  X,
-  AlertCircle,
-  CheckCircle2,
-  RefreshCw,
-  RotateCcw,
-  ChevronLeft,
-  ChevronRight,
+  CreditCard, Send, Check, Search, X, AlertCircle, CheckCircle2,
+  RefreshCw, RotateCcw, ChevronLeft, ChevronRight,
 } from 'lucide-react';
 import { MonthlyFee, Student } from '../types';
 import { formatCurrency, generateWhatsAppUrl, getCurrentMonthYear } from '../utils/formatters';
@@ -160,19 +151,55 @@ export const FeesView: React.FC<FeesViewProps> = ({
 
       {/* ── Resumo do mês ──────────────────────────────────────────────────── */}
       {hasFeesThisMonth && (
-        <div className="grid grid-cols-3 gap-2">
-          <div className="p-3 rounded-xl bg-[#EF4444]/10 border border-[#EF4444]/30 text-center">
-            <p className="text-[10px] text-[#EF4444] font-bold uppercase mb-1">Atrasado</p>
-            <p className="text-sm font-black text-[#EF4444]">{formatCurrency(totalOverdue)}</p>
+        <div className="space-y-2">
+          <div className="grid grid-cols-3 gap-2">
+            <div className="p-3 rounded-xl bg-[#EF4444]/10 border border-[#EF4444]/30 text-center">
+              <p className="text-[10px] text-[#EF4444] font-bold uppercase mb-1">Atrasado</p>
+              <p className="text-sm font-black text-[#EF4444]">{formatCurrency(totalOverdue)}</p>
+            </div>
+            <div className="p-3 rounded-xl bg-[#F59E0B]/10 border border-[#F59E0B]/30 text-center">
+              <p className="text-[10px] text-[#F59E0B] font-bold uppercase mb-1">A Vencer</p>
+              <p className="text-sm font-black text-[#F59E0B]">{formatCurrency(totalPending)}</p>
+            </div>
+            <div className="p-3 rounded-xl bg-[#10B981]/10 border border-[#10B981]/30 text-center">
+              <p className="text-[10px] text-[#10B981] font-bold uppercase mb-1">Recebido</p>
+              <p className="text-sm font-black text-[#10B981]">{formatCurrency(totalPaid)}</p>
+            </div>
           </div>
-          <div className="p-3 rounded-xl bg-[#F59E0B]/10 border border-[#F59E0B]/30 text-center">
-            <p className="text-[10px] text-[#F59E0B] font-bold uppercase mb-1">A Vencer</p>
-            <p className="text-sm font-black text-[#F59E0B]">{formatCurrency(totalPending)}</p>
-          </div>
-          <div className="p-3 rounded-xl bg-[#10B981]/10 border border-[#10B981]/30 text-center">
-            <p className="text-[10px] text-[#10B981] font-bold uppercase mb-1">Recebido</p>
-            <p className="text-sm font-black text-[#10B981]">{formatCurrency(totalPaid)}</p>
-          </div>
+          {/* Cobrança em massa */}
+          {monthFees.filter((f) => f.status === 'ATRASADO').length > 0 && (
+            <button
+              onClick={() => {
+                const overdue = monthFees.filter((f) => f.status === 'ATRASADO');
+                const msgs = overdue.map((fee) => {
+                  const student = students.find((s) => s.id === fee.studentId);
+                  if (!student?.phone) return null;
+                  const clean = student.phone.replace(/\D/g, '');
+                  const phone = clean.startsWith('55') ? clean : `55${clean}`;
+                  const text = encodeURIComponent(
+                    `Olá ${student.name}! Sua mensalidade de ${formatCurrency(fee.amount)} (${fee.monthYear}) vence em ${fee.dueDate}.${pixKey ? ` Pix: ${pixKey}` : ''} Qualquer dúvida é só falar! Oss! — ${academyName}`
+                  );
+                  return `https://wa.me/${phone}?text=${text}`;
+                }).filter(Boolean);
+
+                if (msgs.length === 0) { alert('Nenhum aluno atrasado tem telefone cadastrado.'); return; }
+
+                let i = 0;
+                const openNext = () => {
+                  if (i < msgs.length) {
+                    window.open(msgs[i]!, '_blank');
+                    i++;
+                    if (i < msgs.length) setTimeout(openNext, 1500);
+                  }
+                };
+                openNext();
+              }}
+              className="w-full min-h-[40px] rounded-xl bg-[#EF4444]/15 border border-[#EF4444]/40 text-[#EF4444] font-bold text-xs flex items-center justify-center gap-2 active:scale-95 transition-all"
+            >
+              <Send className="w-3.5 h-3.5" />
+              <span>Cobrar todos os atrasados ({monthFees.filter((f) => f.status === 'ATRASADO').length}) via WhatsApp</span>
+            </button>
+          )}
         </div>
       )}
 
