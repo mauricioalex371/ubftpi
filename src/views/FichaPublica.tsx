@@ -52,38 +52,50 @@ export const FichaPublica: React.FC = () => {
       return;
     }
 
-    const linhas = [
-      `📋 *FICHA DE CADASTRO — ${params.academia.toUpperCase()}*`,
+    // Build the student data object to be imported by the master
+    const studentData = {
+      nome,
+      celular,
+      nascimento,
+      endereco,
+      modalidades,
+      responsavel: isMinor ? responsavel : '',
+      celularResp: isMinor ? celularResp : '',
+      contatoEmerg,
+      celularEmerg,
+      observacoes,
+    };
+
+    // Encode student data as base64 to pass via URL
+    const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(studentData))));
+    const importUrl = `${window.location.origin}${window.location.pathname}?importar=${encoded}`;
+
+    // Build WhatsApp message — use simple line breaks (no \n in template)
+    const msg = [
+      `📋 FICHA DE CADASTRO — ${params.academia.toUpperCase()}`,
       ``,
-      `👤 *Dados Pessoais*`,
+      `👤 Dados Pessoais`,
       `Nome: ${nome}`,
       `Celular: ${celular}`,
       `Nascimento: ${nascimento}`,
       `Endereço: ${endereco}`,
       `Modalidade(s): ${modalidades.join(', ')}`,
-      isMinor ? `` : null,
-      isMinor ? `👨‍👩‍👧 *Responsável*` : null,
-      isMinor ? `Nome: ${responsavel}` : null,
-      isMinor ? `Celular: ${celularResp}` : null,
+      ...(isMinor ? [``, `👨‍👩‍👧 Responsável`, `Nome: ${responsavel}`, `Celular: ${celularResp}`] : []),
       ``,
-      `🚨 *Contato de Emergência*`,
+      `🚨 Contato de Emergência`,
       `Nome: ${contatoEmerg}`,
       `Celular: ${celularEmerg}`,
-      observacoes ? `` : null,
-      observacoes ? `📝 *Observações*` : null,
-      observacoes ? observacoes : null,
+      ...(observacoes ? [``, `📝 Observações`, observacoes] : []),
       ``,
-      `✅ Termos de privacidade (LGPD): aceitos`,
+      `✅ LGPD: aceito`,
       ``,
-      `_Enviado pelo formulário de cadastro da ${params.academia}_`,
-    ]
-      .filter((l) => l !== null)
-      .join('\n');
+      `📲 Clique para salvar no app:`,
+      importUrl,
+    ].join('\n');
 
     const cleanPhone = params.whatsapp.replace(/\D/g, '');
     const fullPhone = cleanPhone.startsWith('55') ? cleanPhone : `55${cleanPhone}`;
-    const url = `https://wa.me/${fullPhone}?text=${encodeURIComponent(linhas)}`;
-    window.open(url, '_blank');
+    window.open(`https://wa.me/${fullPhone}?text=${encodeURIComponent(msg)}`, '_blank');
     setSubmitted(true);
   };
 

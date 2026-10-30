@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="pt-BR" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" href="/icon.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    
+    <!-- PWA Primary & Apple iOS Meta Tags -->
+    <title>UBF Team Gestão</title>
+    <meta name="theme-color" content="#050505" />
+    <meta name="description" content="Sistema de Gestão da Academia de Artes Marciais UBF Team Parque Indiano - Mestre Uarlei Silva" />
+    <link rel="manifest" href="/manifest.json" />
+
+    <!-- iOS Safari Standalone PWA Support -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="UBF Team" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <meta name="format-detection" content="telephone=no" />
+    <script type="module" crossorigin src="/assets/index-DfSAS8fR.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-CcYykkcA.css">
+  </head>
+  <body class="bg-[#050505] text-[#F9FAFB] min-h-screen antialiased select-none selection:bg-[#FF4A0F] selection:text-white overscroll-none">
+    <div id="root"></div>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js').catch(err => {
+            console.log('SW registration failed: ', err);
+          });
+        });
+      }
+    </script>
+  </body>
+</html>

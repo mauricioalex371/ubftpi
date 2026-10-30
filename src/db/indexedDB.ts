@@ -267,3 +267,67 @@ export async function seedIfEmpty(): Promise<boolean> {
     return false;
   }
 }
+
+// Save a student received from the public enrollment form (ficha)
+export async function importStudentFromFicha(encoded: string): Promise<Student | null> {
+  try {
+    const json = decodeURIComponent(escape(atob(encoded)));
+    const data = JSON.parse(json);
+
+    // Generate UUID inline to avoid dynamic import warning
+    const id = typeof crypto !== 'undefined' && crypto.randomUUID
+      ? crypto.randomUUID()
+      : 'id_' + Math.random().toString(36).substr(2, 9) + Date.now().toString(36);
+
+    const now = new Date();
+    const dd = String(now.getDate()).padStart(2, '0');
+    const mm = String(now.getMonth() + 1).padStart(2, '0');
+    const yyyy = now.getFullYear();
+    const currentMY = `${mm}/${yyyy}`;
+    const dueDay = 10;
+    const dueDate = `${String(dueDay).padStart(2, '0')}/${mm}/${yyyy}`;
+
+    const student: Student = {
+      id,
+      name: data.nome || '',
+      phone: data.celular || '',
+      birthDate: data.nascimento || '',
+      isMinor: !!data.responsavel,
+      guardianName: data.responsavel || undefined,
+      guardianPhone: data.celularResp || undefined,
+      address: data.endereco || undefined,
+      emergencyContactName: data.contatoEmerg || undefined,
+      emergencyContactPhone: data.celularEmerg || undefined,
+      modalities: data.modalidades || [],
+      modality: data.modalidades?.[0] || '',
+      graduation: 'Faixa Branca',
+      monthlyFee: 130,
+      dueDay,
+      notes: data.observacoes || '',
+      status: 'ATIVO',
+      createdAt: Date.now(),
+    };
+
+    await putInStore('students', student);
+
+    const feeId = typeof crypto !== 'undefined' && crypto.randomUUID
+      ? crypto.randomUUID()
+      : 'id_' + Math.random().toString(36).substr(2, 9) + Date.now().toString(36);
+
+    await putInStore('fees', {
+      id: feeId,
+      studentId: student.id,
+      studentName: student.name,
+      monthYear: currentMY,
+      dueDate,
+      amount: student.monthlyFee,
+      amountPaid: 0,
+      status: 'PENDENTE' as const,
+    });
+
+    return student;
+  } catch (err) {
+    console.error('importStudentFromFicha failed', err);
+    return null;
+  }
+}

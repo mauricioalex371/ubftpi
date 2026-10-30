@@ -6,7 +6,8 @@ import {
   putInStore, 
   deleteFromStore,
   requestPersistentStorage,
-  seedIfEmpty
+  seedIfEmpty,
+  importStudentFromFicha,
 } from './db/indexedDB';
 import { 
   Student, 
@@ -152,6 +153,26 @@ export const App: React.FC = () => {
   useEffect(() => {
     loadDatabase();
     requestPersistentStorage();
+
+    // Check if master opened a ficha import link
+    const params = new URLSearchParams(window.location.search);
+    const encoded = params.get('importar');
+    if (encoded) {
+      importStudentFromFicha(encoded).then((student) => {
+        if (student) {
+          // Clean URL and reload to show the new student
+          window.history.replaceState({}, '', window.location.pathname);
+          loadDatabase().then(() => {
+            setAutoEditStudentId(student.id);
+            setCurrentTab('alunos');
+            alert(`✅ Aluno "${student.name}" cadastrado com sucesso! Revise e complete os dados.`);
+          });
+        } else {
+          alert('Erro ao importar ficha. Link inválido ou expirado.');
+          window.history.replaceState({}, '', window.location.pathname);
+        }
+      });
+    }
   }, []);
 
   // 1. Onboarding Complete Handler
