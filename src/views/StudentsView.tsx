@@ -208,13 +208,35 @@ export const StudentsView: React.FC<StudentsViewProps> = ({
           <h2 className="text-lg font-black text-white">Alunos</h2>
           <p className="text-xs text-[#9CA3AF]">{students.length} cadastrados no sistema</p>
         </div>
-        <button
-          onClick={handleOpenAdd}
-          className="min-h-[44px] px-4 rounded-xl bg-[#FF4A0F] text-white font-bold text-xs flex items-center gap-2 hover:bg-[#ff3b00] active:scale-95 transition-all shadow-md shadow-[#FF4A0F]/20"
-        >
-          <Plus className="w-4 h-4" />
-          <span>Novo Aluno</span>
-        </button>
+        <div className="flex items-center gap-2">
+          {masterPhone && (
+            <a
+              href={generateWhatsAppUrl(
+                masterPhone,
+                `Olá! Para se cadastrar na ${academyName} preencha sua ficha pelo link abaixo — leva menos de 2 minutos:\n\n${generateFichaUrl(
+                  window.location.origin + window.location.pathname,
+                  academyName,
+                  masterName,
+                  masterPhone
+                )}\n\nQualquer dúvida é só chamar! Oss! 🥋`
+              )}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="min-h-[44px] px-3.5 rounded-xl bg-[#131212] border border-[#FF4A0F]/50 text-[#FF4A0F] font-bold text-xs flex items-center gap-1.5 hover:bg-[#FF4A0F]/10 active:scale-95 transition-all"
+              title="Enviar ficha de cadastro"
+            >
+              <ClipboardList className="w-4 h-4" />
+              <span>Enviar Ficha</span>
+            </a>
+          )}
+          <button
+            onClick={handleOpenAdd}
+            className="min-h-[44px] px-4 rounded-xl bg-[#FF4A0F] text-white font-bold text-xs flex items-center gap-2 hover:bg-[#ff3b00] active:scale-95 transition-all shadow-md shadow-[#FF4A0F]/20"
+          >
+            <Plus className="w-4 h-4" />
+            <span>Novo Aluno</span>
+          </button>
+        </div>
       </div>
 
       {/* Search */}
