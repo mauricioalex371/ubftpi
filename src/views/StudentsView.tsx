@@ -11,6 +11,8 @@ import {
   MapPin,
   AlertCircle,
   ClipboardList,
+  Copy,
+  CheckCheck,
 } from 'lucide-react';
 import { Student, ClassEntity } from '../types';
 import { formatCurrency, generateWhatsAppUrl, generateUUID, calculateAge, generateFichaUrl } from '../utils/formatters';
@@ -53,6 +55,9 @@ export const StudentsView: React.FC<StudentsViewProps> = ({
   const [filterStatus, setFilterStatus] = useState<'TODOS' | 'ATIVO' | 'TRANCADO' | 'CANCELADO'>('TODOS');
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isFichaModalOpen, setIsFichaModalOpen] = useState(false);
+  const [fichaPhone, setFichaPhone] = useState('');
+  const [fichaCopied, setFichaCopied] = useState(false);
 
   // ── Form state ────────────────────────────────────────────────────────────
   const [name, setName] = useState('');
@@ -210,24 +215,13 @@ export const StudentsView: React.FC<StudentsViewProps> = ({
         </div>
         <div className="flex items-center gap-2">
           {masterPhone && (
-            <a
-              href={generateWhatsAppUrl(
-                masterPhone,
-                `Olá! Para se cadastrar na ${academyName} preencha sua ficha pelo link abaixo — leva menos de 2 minutos:\n\n${generateFichaUrl(
-                  window.location.origin + window.location.pathname,
-                  academyName,
-                  masterName,
-                  masterPhone
-                )}\n\nQualquer dúvida é só chamar! Oss! 🥋`
-              )}
-              target="_blank"
-              rel="noopener noreferrer"
+            <button
+              onClick={() => { setFichaPhone(''); setFichaCopied(false); setIsFichaModalOpen(true); }}
               className="min-h-[44px] px-3.5 rounded-xl bg-[#131212] border border-[#FF4A0F]/50 text-[#FF4A0F] font-bold text-xs flex items-center gap-1.5 hover:bg-[#FF4A0F]/10 active:scale-95 transition-all"
-              title="Enviar ficha de cadastro"
             >
               <ClipboardList className="w-4 h-4" />
               <span>Enviar Ficha</span>
-            </a>
+            </button>
           )}
           <button
             onClick={handleOpenAdd}
@@ -776,6 +770,111 @@ export const StudentsView: React.FC<StudentsViewProps> = ({
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── Modal: Enviar Ficha de Cadastro ───────────────────────────────── */}
+      {isFichaModalOpen && masterPhone && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
+          <div className="w-full max-w-sm bg-[#131212] border border-[#272424] rounded-2xl p-5 shadow-2xl">
+            <div className="flex items-center justify-between pb-3 border-b border-[#272424] mb-4">
+              <div className="flex items-center gap-2">
+                <ClipboardList className="w-4 h-4 text-[#FF4A0F]" />
+                <h3 className="text-sm font-bold text-white">Enviar Ficha de Cadastro</h3>
+              </div>
+              <button
+                onClick={() => setIsFichaModalOpen(false)}
+                className="min-w-[44px] min-h-[44px] flex items-center justify-center text-[#9CA3AF] hover:text-white"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              {/* Link da ficha */}
+              <div>
+                <label className="block text-xs font-semibold text-[#9CA3AF] mb-1">Link da Ficha</label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    readOnly
+                    value={generateFichaUrl(
+                      window.location.origin + window.location.pathname,
+                      academyName,
+                      masterName,
+                      masterPhone
+                    )}
+                    className="flex-1 min-h-[44px] px-3 rounded-xl bg-[#050505] border border-[#272424] text-[#9CA3AF] text-xs focus:outline-none truncate"
+                  />
+                  <button
+                    onClick={() => {
+                      const url = generateFichaUrl(
+                        window.location.origin + window.location.pathname,
+                        academyName,
+                        masterName,
+                        masterPhone
+                      );
+                      navigator.clipboard.writeText(url);
+                      setFichaCopied(true);
+                      setTimeout(() => setFichaCopied(false), 2000);
+                    }}
+                    className={`min-w-[44px] min-h-[44px] rounded-xl border flex items-center justify-center transition-all active:scale-95 ${
+                      fichaCopied
+                        ? 'bg-[#10B981]/20 border-[#10B981]/40 text-[#10B981]'
+                        : 'bg-[#050505] border-[#272424] text-[#9CA3AF] hover:text-white hover:border-[#FF4A0F]'
+                    }`}
+                    title="Copiar link"
+                  >
+                    {fichaCopied ? <CheckCheck className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                  </button>
+                </div>
+                {fichaCopied && (
+                  <p className="text-[11px] text-[#10B981] mt-1">Link copiado!</p>
+                )}
+              </div>
+
+              {/* Enviar por WhatsApp */}
+              <div>
+                <label className="block text-xs font-semibold text-[#9CA3AF] mb-1">
+                  Enviar pelo WhatsApp
+                </label>
+                <div className="flex gap-2">
+                  <input
+                    type="tel"
+                    value={fichaPhone}
+                    onChange={(e) => setFichaPhone(e.target.value)}
+                    placeholder="21988887777"
+                    className="flex-1 min-h-[44px] px-3 rounded-xl bg-[#050505] border border-[#272424] text-white text-sm focus:border-[#FF4A0F] focus:outline-none"
+                  />
+                  <a
+                    href={fichaPhone.trim() ? generateWhatsAppUrl(
+                      fichaPhone,
+                      `Olá! Para se cadastrar na ${academyName} preencha sua ficha pelo link abaixo — leva menos de 2 minutos:\n\n${generateFichaUrl(
+                        window.location.origin + window.location.pathname,
+                        academyName,
+                        masterName,
+                        masterPhone
+                      )}\n\nQualquer dúvida é só chamar! Oss! 🥋`
+                    ) : '#'}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={(e) => { if (!fichaPhone.trim()) e.preventDefault(); }}
+                    className={`min-w-[44px] min-h-[44px] rounded-xl flex items-center justify-center transition-all active:scale-95 ${
+                      fichaPhone.trim()
+                        ? 'bg-[#10B981] text-black shadow-md shadow-[#10B981]/20'
+                        : 'bg-[#272424] text-[#6B7280] cursor-not-allowed'
+                    }`}
+                    title="Enviar no WhatsApp"
+                  >
+                    <Send className="w-4 h-4" />
+                  </a>
+                </div>
+                <p className="text-[11px] text-[#6B7280] mt-1">
+                  Digite o número e toque no ícone para abrir o WhatsApp.
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       )}
