@@ -1,0 +1,6 @@
+{
+  "name": "UBF Team Gestão",
+  "description": "Sistema de gestão da academia de artes marciais UBF Team Parque Indiano - Mestre Uarlei Silva. Controle de alunos, turmas, presenças, mensalidades e financeiro.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
