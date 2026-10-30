@@ -32,7 +32,7 @@ export const FichaPublica: React.FC = () => {
   const [celular, setCelular] = useState('');
   const [nascimento, setNascimento] = useState('');
   const [endereco, setEndereco] = useState('');
-  const [modalidade, setModalidade] = useState(params.modalidade || '');
+  const [modalidades, setModalidades] = useState<string[]>(params.modalidade ? [params.modalidade] : []);
   const [isMinor, setIsMinor] = useState(false);
   const [responsavel, setResponsavel] = useState('');
   const [celularResp, setCelularResp] = useState('');
@@ -42,6 +42,9 @@ export const FichaPublica: React.FC = () => {
   const [concordaLgpd, setConcordaLgpd] = useState(false);
 
   const MODALIDADES = ['Jiu-Jitsu', 'Muay Thai', 'Funcional', 'MMA', 'Boxe'];
+
+  const toggleModalidade = (m: string) =>
+    setModalidades((prev) => prev.includes(m) ? prev.filter((x) => x !== m) : [...prev, m]);
 
   const handleSubmit = () => {
     if (!concordaLgpd) {
@@ -57,7 +60,7 @@ export const FichaPublica: React.FC = () => {
       `Celular: ${celular}`,
       `Nascimento: ${nascimento}`,
       `Endereço: ${endereco}`,
-      `Modalidade: ${modalidade}`,
+      `Modalidade(s): ${modalidades.join(', ')}`,
       isMinor ? `` : null,
       isMinor ? `👨‍👩‍👧 *Responsável*` : null,
       isMinor ? `Nome: ${responsavel}` : null,
@@ -189,23 +192,33 @@ export const FichaPublica: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-[#9CA3AF] mb-1.5">Modalidade *</label>
+                <label className="block text-xs font-semibold text-[#9CA3AF] mb-1.5">
+                  Modalidade(s) *{' '}
+                  <span className="font-normal text-[#6B7280]">(pode escolher mais de uma)</span>
+                </label>
                 <div className="flex flex-wrap gap-2">
-                  {MODALIDADES.map((m) => (
-                    <button
-                      key={m}
-                      type="button"
-                      onClick={() => setModalidade(m)}
-                      className={`min-h-[40px] px-4 rounded-xl text-sm font-bold transition-all ${
-                        modalidade === m
-                          ? 'bg-[#FF4A0F] text-white'
-                          : 'bg-[#131212] text-[#9CA3AF] border border-[#272424]'
-                      }`}
-                    >
-                      {m}
-                    </button>
-                  ))}
+                  {MODALIDADES.map((m) => {
+                    const selected = modalidades.includes(m);
+                    return (
+                      <button
+                        key={m}
+                        type="button"
+                        onClick={() => toggleModalidade(m)}
+                        className={`min-h-[40px] px-4 rounded-xl text-sm font-bold transition-all flex items-center gap-1.5 ${
+                          selected
+                            ? 'bg-[#FF4A0F] text-white'
+                            : 'bg-[#131212] text-[#9CA3AF] border border-[#272424]'
+                        }`}
+                      >
+                        {selected && <Check className="w-3.5 h-3.5" />}
+                        {m}
+                      </button>
+                    );
+                  })}
                 </div>
+                {modalidades.length === 0 && (
+                  <p className="text-[11px] text-[#EF4444] mt-1">Selecione ao menos uma modalidade</p>
+                )}
               </div>
 
               {/* Menor de idade */}
@@ -249,8 +262,8 @@ export const FichaPublica: React.FC = () => {
 
             <button
               onClick={() => {
-                if (!nome.trim() || !celular.trim() || !nascimento.trim() || !endereco.trim() || !modalidade) {
-                  alert('Preencha todos os campos obrigatórios (*).');
+                if (!nome.trim() || !celular.trim() || !nascimento.trim() || !endereco.trim() || modalidades.length === 0) {
+                  alert('Preencha todos os campos obrigatórios (*) e selecione ao menos uma modalidade.');
                   return;
                 }
                 setStep(2);
@@ -357,8 +370,12 @@ export const FichaPublica: React.FC = () => {
                 <p className="text-white font-bold">{endereco}</p>
               </div>
               <div>
-                <p className="text-[#9CA3AF] mb-0.5">Modalidade</p>
-                <p className="text-[#FF4A0F] font-bold">{modalidade}</p>
+                <p className="text-[#9CA3AF] mb-0.5">Modalidade(s)</p>
+                <div className="flex flex-wrap gap-1">
+                  {modalidades.map((m) => (
+                    <span key={m} className="text-[#FF4A0F] font-bold bg-[#FF4A0F]/10 px-2 py-0.5 rounded-lg text-xs">{m}</span>
+                  ))}
+                </div>
               </div>
               {isMinor && (
                 <div>
